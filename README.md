@@ -40,7 +40,7 @@
 #### 1. Navigate to the `Java/` folder.
 #### 2. Compile the file using:
 ####    ```bash
-#######    javac FileName.java
+####    javac FileName.java
 ####    ```
 #### 3. Run the program using:
 ####    ```bash
