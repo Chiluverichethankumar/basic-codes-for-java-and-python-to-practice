@@ -1,4 +1,4 @@
-# ## Basic Codes for Java and Python to Practice
+## Basic Codes for Java and Python to Practice
 # 
 # This repository contains simple and beginner-friendly code examples in **Java** and **Python** 
 # to help individuals learn and practice programming fundamentals.
