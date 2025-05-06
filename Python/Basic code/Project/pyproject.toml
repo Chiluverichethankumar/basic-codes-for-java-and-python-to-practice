@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "fetch-research-papers"
+version = "0.5.0"
+description = "Fetch research papers and store them in a database."
+authors = ["Your Name <your.email@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+requests = "^2.26.0"
+typer = "^0.7.0"
+sqlalchemy = "^1.4.0"  # For database interactions
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.0"  # Unit testing
+
+[tool.poetry.scripts]
+fetch-papers = "fetch_research_papers.fetch_papers:main"  # Entry point for CLI
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
