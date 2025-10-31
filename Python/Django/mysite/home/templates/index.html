@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sky Battle - 10 Levels</title>
+<style>
+  body {
+    margin: 0;
+    background: linear-gradient(to bottom, #111, #333);
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+  }
+
+  #gameTitle {
+    position: absolute;
+    top: 10px;
+    width: 100%;
+    text-align: center;
+    font-size: 2em;
+    color: #fff;
+    font-weight: bold;
+    z-index: 10;
+  }
+
+  canvas {
+    display: block;
+    margin: 0 auto;
+  }
+
+  #instructions {
+    position: absolute;
+    bottom: 10px;
+    width: 100%;
+    text-align: center;
+    color: #fff;
+    font-size: 16px;
+    z-index: 10;
+  }
+
+  #overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    z-index: 20;
+  }
+
+  #overlay h1 {
+    color: #fff;
+    font-size: 3em;
+  }
+
+  #restartBtn {
+    margin-top: 20px;
+    padding: 15px 30px;
+    font-size: 1.5em;
+    background-color: #ff66aa;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+
+  #restartBtn:hover {
+    background-color: #ff3388;
+  }
+</style>
+</head>
+<body>
+<div id="gameTitle">Sky Battle - 10 Levels</div>
+<canvas id="gameCanvas" width="800" height="500"></canvas>
+<div id="instructions">
+  <p>
+    Use arrow keys to move, space or Enter to shoot.<br/>
+    Avoid enemies and obstacles! Defeat all enemies to progress to the next level.
+  </p>
+</div>
+<div id="overlay">
+  <h1 id="message"></h1>
+  <button id="restartBtn">Play Again</button>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const overlay = document.getElementById('overlay');
+const messageElem = document.getElementById('message');
+const restartBtn = document.getElementById('restartBtn');
+
+let gameRunning = false; 
+let gameOver = false;
+let win = false;
+let currentLevel = 0; // 0-based index for levels array
+
+// Player object
+const player = {
+  x: 50,
+  y: 0,
+  width: 50,
+  height: 70,
+  color: '#ff66aa',
+  speed: 4,
+  dy: 0,
+  jumpStrength: 12,
+  onGround: false,
+  shootCooldown: false
+};
+
+let enemies = [];
+let bullets = [];
+let obstacles = [];
+
+const keys = {};
+document.addEventListener('keydown', e => { keys[e.key] = true; });
+document.addEventListener('keyup', e => { keys[e.key] = false; });
+
+// Define levels
+const levels = [
+  // Level 1
+  {
+    obstacles: [
+      { x: 0, y: 490, width: 800, height: 10, color: '#555' }
+    ],
+    enemies: [
+      { x: 700, y: 420, width: 40, height: 70, color: '#66ccff', speed: 2 }
+    ]
+  },
+  // Level 2
+  {
+    obstacles: [
+      { x: 0, y: 490, width: 800, height: 10, color: '#555' }
+    ],
+    enemies: [
+      { x: 600, y: 420, width: 40, height: 70, color: '#66ccff', speed: 2 }
+    ]
+  },
+  // Level 3
+  {
+    obstacles: [
+      { x: 0, y: 490, width: 800, height: 10, color: '#555' }
+    ],
+    enemies: [
+      { x: 700, y: 420, width: 40, height: 70, color: '#66ccff', speed: 2 }
+    ]
+  },
+  // Level 4
+  {
+    obstacles: [
+      { x: 0, y: 490, width: 800, height: 10, color: '#555' }
+    ],
+    enemies: [
+      { x: 700, y: 420, width: 40, height: 70, color: '#66ccff', speed: 3 }
+    ]
+  },
+  // Level 5
+  {
+    obstacles: [
+      { x: 0, y: 490, width: 800, height: 10, color: '#555' }
+    ],
+    enemies: [
+      { x: 700, y: 420, width: 40, height: 70, color: '#66ccff', speed: 3 }
+    ]
+  },
+  // Level 6
+  {
+    obstacles: [
+      { x: 0, y: 490, width: 800, height: 10, color: '#555' }
+    ],
+    enemies: [
+      { x: 700, y: 420, width: 40, height: 70, color: '#66ccff', speed: 4 }
+    ]
+  },
+  // Level 7
+  {
+    obstacles: [
+      { x: 0, y: 490, width: 800, height: 10, color: '#555' }
+    ],
+    enemies: [
+      { x: 700, y: 420, width: 40, height: 70, color: '#66ccff', speed: 4 }
+    ]
+  },
+  // Level 8
+  {
+    obstacles: [
+      { x: 0, y: 490, width: 800, height: 10, color: '#555' }
+    ],
+    enemies: [
+      { x: 700, y: 420, width: 40, height: 70, color: '#66ccff', speed: 5 }
+    ]
+  },
+  // Level 9
+  {
+    obstacles: [
+      { x: 0, y: 490, width: 800, height: 10, color: '#555' }
+    ],
+    enemies: [
+      { x: 700, y: 420, width: 40, height: 70, color: '#66ccff', speed: 5 }
+    ]
+  },
+  // Level 10
+  {
+    obstacles: [
+      { x: 0, y: 490, width: 800, height: 10, color: '#555' }
+    ],
+    enemies: [
+      { x: 700, y: 420, width: 40, height: 70, color: '#66ccff', speed: 6 }
+    ]
+  }
+];
+
+function initLevel() {
+  const lvl = levels[currentLevel];
+  obstacles = lvl.obstacles.slice();
+  enemies = lvl.enemies.map(e => ({...e})); // clone enemies
+  // Reset enemy positions based on level
+  for (let e of enemies) {
+    e.x = 800 + Math.random() * 200; // start off-screen to right
+  }
+}
+
+function startGame() {
+  gameOver = false;
+  win = false;
+  currentLevel = 0;
+  player.x = 50;
+  player.y = 0;
+  player.dy = 0;
+  initLevel();
+  overlay.style.display = 'none';
+  gameRunning = true;
+  lastTime = performance.now();
+  requestAnimationFrame(gameLoop);
+}
+
+restartBtn.onclick = () => {
+  startGame();
+}
+
+function shoot() {
+  if (player.shootCooldown) return;
+  bullets.push({
+    x: player.x + player.width,
+    y: player.y + player.height/2 - 5,
+    width: 10,
+    height: 10,
+    color: '#ffff66',
+    speed: 8
+  });
+  player.shootCooldown = true;
+}
+
+let lastTime = 0;
+
+function gameLoop(currentTime) {
+  if (!gameRunning) return;
+  const delta = currentTime - lastTime;
+  lastTime = currentTime;
+
+  if (!gameOver && !win) {
+    update(delta);
+  } else {
+    overlay.style.display = 'flex';
+    messageElem.textContent = gameOver ? 'GAME OVER' : 'CONGRATULATIONS! YOU COMPLETED ALL LEVELS!';
+    gameRunning = false;
+    return; // stop loop
+  }
+
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+function update(delta) {
+  // Jump
+  if ((keys[' '] || keys['ArrowUp']) && player.onGround) {
+    player.dy = -player.jumpStrength;
+    player.onGround = false;
+  }
+
+  // Movement
+  if (keys['ArrowLeft']) player.x -= player.speed;
+  if (keys['ArrowRight']) player.x += player.speed;
+
+  // Gravity
+  player.dy += 0.5;
+  player.y += player.dy;
+
+  // Ground collision
+  if (player.y + player.height >= 490) {
+    player.y = 490 - player.height;
+    player.dy = 0;
+    player.onGround = true;
+  }
+
+  // Keep within bounds
+  if (player.x < 0) player.x = 0;
+  if (player.x + player.width > 800) player.x = 800 - player.width;
+
+  // Shooting
+  if ((keys[' '] || keys['Enter'])) {
+    shoot();
+  } else {
+    player.shootCooldown = false;
+  }
+
+  // Move bullets
+  for (let i=bullets.length-1; i>=0; i--) {
+    bullets[i].x += bullets[i].speed;
+    if (bullets[i].x > 800) {
+      bullets.splice(i,1);
+    }
+  }
+
+  // Move enemies
+  for (let e of enemies) {
+    e.x -= e.speed;
+  }
+
+  // Enemy reset when off-screen
+  for (let e of enemies) {
+    if (e.x < -50) {
+      e.x = 800 + Math.random() * 200; // restart off-screen to right
+    }
+  }
+
+  // Bullet-enemy collision
+  for (let i=enemies.length-1; i>=0; i--) {
+    let e = enemies[i];
+    for (let j=bullets.length-1; j>=0; j--) {
+      if (isColliding(e, bullets[j])) {
+        enemies.splice(i,1);
+        bullets.splice(j,1);
+        break;
+      }
+    }
+  }
+
+  // Player-enemy collision
+  for (let e of enemies) {
+    if (isColliding(player, e)) {
+      gameOver = true;
+    }
+  }
+
+  // Player-obstacle collision (landing)
+  for (let o of obstacles) {
+    if (isColliding(player, o)) {
+      if (player.dy > 0 && player.y + player.height > o.y && player.y < o.y + o.height) {
+        player.y = o.y - player.height;
+        player.dy = 0;
+        player.onGround = true;
+      }
+    }
+  }
+
+  // Check for level completion
+  if (enemies.length === 0 && player.x + player.width >= 750) {
+    if (currentLevel >= 9) {
+      // All levels completed
+      win = true;
+    } else {
+      currentLevel++;
+      initLevel();
+      // Reset player's position
+      player.x = 50;
+      player.y = 0;
+      player.dy = 0;
+    }
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, 800, 500);
+  ctx.fillStyle = '#222';
+  ctx.fillRect(0, 0, 800, 500);
+
+  // Draw obstacles
+  for (const o of obstacles) {
+    ctx.fillStyle = o.color;
+    ctx.fillRect(o.x, o.y, o.width, o.height);
+  }
+
+  // Draw human
+  drawHuman(player.x, player.y, player.width, player.height, player.color);
+
+  // Draw enemies
+  for (const e of enemies) {
+    ctx.fillStyle = e.color;
+    ctx.fillRect(e.x, e.y, e.width, e.height);
+  }
+
+  // Draw bullets
+  for (const b of bullets) {
+    ctx.fillStyle = b.color;
+    ctx.fillRect(b.x, b.y, b.width, b.height);
+  }
+
+  // Draw level info
+  ctx.fillStyle = '#fff';
+  ctx.font = '20px Arial';
+  ctx.fillText('Level: ' + (currentLevel + 1) + ' / 10', 10, 30);
+}
+
+// Draw human figure
+function drawHuman(x, y, width, height, color) {
+  const headRadius = width * 0.2;
+  const bodyHeight = height * 0.5;
+  const limbLength = height * 0.3;
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+
+  // Head
+  ctx.beginPath();
+  ctx.arc(x + width/2, y + headRadius, headRadius, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Body
+  ctx.beginPath();
+  ctx.moveTo(x + width/2, y + 2 * headRadius);
+  ctx.lineTo(x + width/2, y + 2 * headRadius + bodyHeight);
+  ctx.stroke();
+
+  // Arms
+  ctx.beginPath();
+  ctx.moveTo(x + width/2, y + 2 * headRadius + bodyHeight/3);
+  ctx.lineTo(x, y + 2 * headRadius + bodyHeight/3 + limbLength/2);
+  ctx.moveTo(x + width/2, y + 2 * headRadius + bodyHeight/3);
+  ctx.lineTo(x + width, y + 2 * headRadius + bodyHeight/3 + limbLength/2);
+  ctx.stroke();
+
+  // Legs
+  ctx.beginPath();
+  ctx.moveTo(x + width/2, y + 2 * headRadius + bodyHeight);
+  ctx.lineTo(x + width/4, y + 2 * headRadius + bodyHeight + limbLength);
+  ctx.moveTo(x + width/2, y + 2 * headRadius + bodyHeight);
+  ctx.lineTo(x + (3 * width)/4, y + 2 * headRadius + bodyHeight + limbLength);
+  ctx.stroke();
+}
+
+// Collision detection
+function isColliding(a, b) {
+  return (
+    a.x < b.x + b.width &&
+    a.x + a.width > b.x &&
+    a.y < b.y + b.height &&
+    a.y + a.height > b.y
+  );
+}
+
+// Start game
+startGame();
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
